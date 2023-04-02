@@ -1,0 +1,22 @@
+---
+- name: Configure switches
+  hosts: core_switches
+  gather_facts: no
+  connection: local
+  vars_files: vars.yml
+  tasks:
+  - name: Configure standby
+    cisco.ios.ios_config:
+      parents: interface vlan {{ item.id }}
+      lines:
+      - standby 1 ip {{ item.subnet.split('.')[0] }}.{{ item.subnet.split('.')[1] }}.{{ item.subnet.split('.')[2] }}.254      
+      - standby 1 priority {{ vars[ inventory_hostname+'_hsrp' ] }}
+      - standby 1 preempt
+    notify: "Write Config"
+    loop: "{{ global_vlans | selectattr('tagged','==',true) | list }}"
+
+  handlers:
+  - name: Write Config
+    cisco.ios.ios_command:
+      commands:
+      - write

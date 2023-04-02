@@ -1,0 +1,25 @@
+---
+- name: Configure switches
+  hosts: switches
+  gather_facts: no
+  connection: local
+  vars_files: vars.yml
+  tasks:
+  - name: Construct list of allowed vlans
+    set_fact:
+      allowed_vlans: "{{ allowed_vlans + [ item.id ] }}"
+    loop: "{{ global_vlans }}"
+    when: "{{ item.tagged }} == true"
+
+  - name: Configure ports
+    cisco.ios.ios_config:
+      parents: "{{ item[0] }}"
+      lines: "{{ item[1:] }}"
+    notify: "Write Config"
+    loop: "{{ vars[ inventory_hostname+'_interfaces' ] }}"
+
+  handlers:
+  - name: Write Config
+    cisco.ios.ios_command:
+      commands:
+      - write

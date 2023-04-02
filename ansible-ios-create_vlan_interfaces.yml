@@ -1,0 +1,21 @@
+---
+- name: Configure switches
+  hosts: switches
+  gather_facts: no
+  connection: local
+  vars_files: vars.yml
+  tasks:
+  - name: Create VLAN interface
+    cisco.ios.ios_config:
+      parents:
+      - interface vlan {{ item.id }}
+      lines:
+      - "ip address {{ item.subnet.split('.')[0] }}.{{ item.subnet.split('.')[1] }}.{{ item.subnet.split('.')[2] }}.{{ vars[inventory_hostname+'_ip'] }}  {{ item.mask }}"
+      - no shutdown
+    notify: "Write Config"
+    loop: "{{ global_vlans | selectattr('tagged','==',true) | list }}"
+  handlers:
+  - name: Write Config
+    cisco.ios.ios_command:
+      commands:
+      - write

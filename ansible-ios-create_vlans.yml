@@ -1,0 +1,21 @@
+---
+- name: Configure switches
+  hosts: switches
+  gather_facts: no
+  connection: local
+  vars_files: vars.yml
+  tasks:
+  - name: Create VLAN
+    cisco.ios.ios_config:
+      lines:
+      - name {{ item.name }}
+      parents:
+      - vlan {{ item.id }}
+    loop: "{{ global_vlans }}"
+    notify: "Write Config"
+
+  handlers:
+  - name: Write Config
+    cisco.ios.ios_command:
+      commands:
+      - write
